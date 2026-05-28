@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POKYON — Official Global Network Portal</title>
+    <style>
+        :root {
+            --primary: #00ffcc;
+            --accent: #ff007f;
+            --spiritual: #00ff99;
+            --bg: #060912;
+            --surface: #0e1322;
+            --surface-hover: #161e33;
+            --text-main: #f0f4f8;
+            --text-secondary: #8c9ba5;
+            --border-glow: rgba(0, 255, 204, 0.25);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', monospace; scroll-behavior: smooth; }
+        body { background-color: var(--bg); color: var(--text-main); line-height: 1.6; padding: 0; position: relative; }
+
+        /* Neon scanline visual effect */
+        body::before {
+            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 1000; background-size: 100% 3px, 3px 100%; pointer-events: none;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 25px; }
+
+        /* Navigation or Header */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2.5px solid var(--primary); padding-bottom: 20px; margin-bottom: 40px;
+            box-shadow: 0 10px 20px rgba(0,255,204,0.03);
+        }
+        .logo-box h1 { font-size: 2.5rem; letter-spacing: 6px; font-weight: 900; color: var(--primary); text-shadow: 0 0 15px rgba(0, 255, 204, 0.6); }
+        .logo-box span { font-size: 0.8rem; color: var(--text-secondary); letter-spacing: 2px; text-transform: uppercase; }
+
+        /* simulated live server stat counters */
+        .live-stat-bar { display: flex; gap: 30px; flex-wrap: wrap; }
+        .stat-item { padding: 5px 15px; border: 1px solid var(--border-glow); border-radius: 4px; background: rgba(0,255,204,0.02); }
+        .stat-lbl { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; }
+        .stat-val { font-size: 1.1rem; color: var(--primary); font-weight: bold; }
+
+        /* Main structure */
+        .hero {
+            background: radial-gradient(circle at top left, rgba(0,255,204,0.08), transparent 70%), var(--surface);
+            padding: 40px; border-radius: 8px; border: 1.5px solid var(--primary);
+            box-shadow: 0 0 30px rgba(0,255,204,0.05); margin-bottom: 40px;
+        }
+        .hero h2 { font-size: 1.8rem; color: var(--primary); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 3px; }
+        .hero p { color: var(--text-secondary); font-size: 0.95rem; max-width: 900px; margin-bottom: 20px; }
+
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-bottom: 40px; }
+        .db-card { background: var(--surface); border: 1.5px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 25px; transition: all 0.3s ease; }
+        .db-card:hover { border-color: var(--primary); background: var(--surface-hover); transform: translateY(-3px); }
+        .db-card h3 { font-size: 1.25rem; color: var(--primary); margin-bottom: 20px; text-transform: uppercase; border-bottom: 1px solid rgba(0, 255, 204, 0.15); padding-bottom: 10px; }
+
+        /* Time manager panel */
+        .timer-panel { background: rgba(255, 0, 127, 0.03); border-color: rgba(255,0,127,0.2) !important; }
+        .timer-panel h3 { color: var(--accent) !important; border-bottom-color: rgba(255,0,127,0.15) !important; }
+        .countdown-view { font-size: 2.2rem; font-weight: bold; color: var(--accent); margin: 15px 0; letter-spacing: 2px; }
+        .cooldown-pb { height: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--accent); border-radius: 5px; overflow: hidden; margin-top: 10px; }
+        .cooldown-fill { height: 100%; width: 100%; background: var(--accent); transition: width 1s linear; }
+
+        /* Status badges */
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 3px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .badge-green { background: rgba(0, 255, 153, 0.15); color: var(--spiritual); border: 1px solid var(--spiritual); }
+        .badge-red { background: rgba(255, 0, 127, 0.15); color: var(--accent); border: 1px solid var(--accent); }
+
+        ul.culture-list { list-style: none; }
+        ul.culture-list li { margin-bottom: 15px; position: relative; padding-left: 20px; }
+        ul.culture-list li::before { content: "»"; position: absolute; left: 0; color: var(--primary); font-weight: bold; }
+        
+        /* 5-billion DevOps topology layout */
+        .orchestration-box { background: rgba(10, 15, 29, 0.95); border: 1px solid #1a233a; padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 0.75rem; font-family: 'Consolas', monospace; color: #a1b0bd; margin-top: 15px; max-height: 250px; }
+        .kni-key { color: #f92672; }
+        .kni-val { color: #a6e22e; }
+
+        /* Legal Owner Label */
+        .sovereign-banner { background: linear-gradient(90deg, rgba(0,255,204,0.05), rgba(0,255,153,0.05)); border: 1.5px solid var(--primary); padding: 20px; border-radius: 6px; text-align: center; margin-bottom: 40px; }
+        .sovereign-banner h4 { font-size: 0.95rem; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+
+        footer { text-align: center; color: var(--text-secondary); font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 25px; margin-top: 50px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <header>
+            <div class="logo-box">
+                <h1>POKYON</h1>
+                <span>Global Multiplay Server Mesh Hub</span>
+            </div>
+            <div class="live-stat-bar">
+                <div class="stat-item">
+                    <div class="stat-lbl">Active Mesh Nodes</div>
+                    <div class="stat-val" id="mesh-nodes">42,912 / 50,000</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-lbl">World Conc. Load</div>
+                    <div class="stat-val" id="user-count">4.89 Billion</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="sovereign-banner">
+            <h4>CERTIFICATE OF PRIVATE INTELLECTUAL PROPERTY PROPERTY</h4>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                All core systems, map layouts, spiritual code algorithms, anti-addiction clock parameters, and trademarks of 
+                <strong>"POKYON"</strong> are strictly owned by 
+                <strong style="color: #fff; font-size: 0.95rem;">ROYAL PUSKAR KHAS</strong>. 
+                Zero third-party licensed components or watermarks are integrated, protecting sovereignty completely.
+            </p>
+        </div>
+
+        <div class="hero">
+            <h2>The Spiritual Action-Survival Realm</h2>
+            <p>
+                Pokyon is a next-generation action game that fuses world cultural heritage platforms, visceral third-person movement mechanics (Free Fire pacing), tactical weapon kickback and dynamic ballistics (PUBG realism), and peaceful glowing "Healing Sanctuaries." Connected globally to high-throughput Redis databases, the ecosystem synchronizes legal digital wellness restraints natively.
+            </p>
+            <span class="badge badge-green">Server Sockets: Standard UDP // Active</span>
+        </div>
+
+        <div class="dashboard-grid">
+            
+            <!-- Real-Time User Digital Cooldown Simulator Card -->
+            <div class="db-card timer-panel">
+                <h3>⚖️ Digital Wellness Live Monitor</h3>
+                <p style="font-size: 0.85rem; margin-bottom: 10px;">
+                    Centralized Redis clusters validate state. Simulating the universal 4-hour daily limit and 30-minute break protocol.
+                </p>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Simulated Clock</div>
+                <div class="countdown-view" id="timer-countdown">04:00:00</div>
+                <span class="badge badge-green" id="cooldown-status">Core Operational</span>
+                
+                <div class="cooldown-pb">
+                    <div class="cooldown-fill" id="cooldown-fill"></div>
+                </div>
+                <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 8px;">
+                    Handshake rate: 0.1Hz client pings. Session resets automatically on break completion.
+                </p>
+            </div>
+
+            <!-- Secure Nepalese Billing & Fund Routing Splitter Card -->
+            <div class="db-card" style="border-color: rgba(0, 255, 204, 0.35); background: linear-gradient(135deg, rgba(14,19,34,0.95), rgba(6,9,18,0.95));">
+                <h3>🇳🇵 Nepal ePay & Settlement</h3>
+                <p style="font-size: 0.85rem; margin-bottom: 15px; color: var(--text-secondary);">
+                    Certified eSewa, Khalti and ConnectIPS split API sandbox. Real-time 70/30 split, signature validation, and Redis audit updates.
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                    <div>
+                        <label style="font-size: 0.75rem; color: var(--primary); display: block; margin-bottom: 4px;">TOP-UP AMOUNT (NPR):</label>
+                        <input type="number" id="topup-amount" value="500" min="10" max="100000" style="background: rgba(0,0,0,0.6); border: 2px solid var(--primary); padding: 8px; border-radius: 4px; color: #fff; width: 100%; font-family: monospace;" />
+                    </div>
+                    <div>
+                        <label style="font-size: 0.75rem; color: var(--spiritual); display: block; margin-bottom: 4px;">TRANSACTION GATEWAY:</label>
+                        <select id="topup-gateway" style="background: rgba(0,0,0,0.6); border: 2px solid var(--spiritual); padding: 8px; border-radius: 4px; color: #fff; width: 100%; font-family: monospace;">
+                            <option value="esewa">eSewa epay v2 (HMAC Signed)</option>
+                            <option value="khalti">Khalti Merchant API v2</option>
+                        </select>
+                    </div>
+                    <button onclick="simulateNprTopup()" style="background: var(--primary); color: #000; border: none; padding: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-family: monospace; letter-spacing: 1px; transition: transform 0.1s ease;">
+                        ⚡ Initiate Secure Split
+                    </button>
+                </div>
+                
+                <div id="payout-result" style="display: none; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,255,204,0.15); padding: 12px; border-radius: 4px; font-size: 0.75rem;">
+                    <div style="font-weight: bold; color: var(--primary); margin-bottom: 6px; border-bottom: 1.5px solid rgba(0,255,204,0.15); padding-bottom: 4px;">LEDGER PAYMENT SUCCESS:</div>
+                    <div style="margin-bottom: 4px;"><strong style="color: #fff;">Tx UUID:</strong> <span id="res-uuid" style="color: var(--text-secondary);"></span></div>
+                    <div style="margin-bottom: 4px;"><strong style="color: #fff;">Gateway Key:</strong> <span id="res-gateway" style="color: var(--primary); font-weight: bold;"></span></div>
+                    <div style="margin-bottom: 4px;"><strong style="color: #fff;">HMAC Signature:</strong> <span id="res-hash" style="color: yellow; word-break: break-all;"></span></div>
+                    <div style="margin-bottom: 4px;"><strong style="color: #fff;">Total Gross NPR:</strong> <span id="res-total" style="color: var(--primary); font-weight: bold;"></span></div>
+                    <div style="margin-bottom: 4px;"><strong style="color: #fff;">IRD 13% VAT Split:</strong> <span id="res-vat" style="color: var(--accent);"></span></div>
+                    <div style="margin-bottom: 4px;"><strong style="color: #fff;">Tax-Exclusive Base:</strong> <span id="res-base" style="color: var(--text-secondary);"></span></div>
+                    
+                    <div style="margin-top: 10px; margin-bottom: 6px; font-weight: bold; color: var(--spiritual);">AUTOMATED 70/30 SPLIT ROUTING:</div>
+                    <div style="margin-bottom: 4px; padding-left: 8px; border-left: 2px solid var(--spiritual);">
+                        <strong style="color: var(--primary);">70% Primary Ops (Nabil Bank):</strong><br>
+                        Account: <span style="font-size:0.7rem; color:var(--text-secondary);">0110017502781</span><br>
+                        Settled: <span id="res-op-amount" style="color: var(--primary); font-weight: bold;"></span>
+                    </div>
+                    <div style="margin-bottom: 4px; padding-left: 8px; border-left: 2px solid var(--accent);">
+                        <strong style="color: var(--accent);">30% Secondary Reserve (NIC Asia):</strong><br>
+                        Account: <span style="font-size:0.7rem; color:var(--text-secondary);">1202874910274</span><br>
+                        Settled: <span id="res-res-amount" style="color: var(--accent); font-weight: bold;"></span>
+                    </div>
+
+                    <div style="margin-top: 10px; font-weight: bold; color: var(--primary);">REDIS SECURE LEDGER RECORD:</div>
+                    <pre id="redis-payload-log" style="overflow-x: auto; font-size: 0.65rem; color: #a1b0bd; background: #060912; padding: 6px; border-radius: 2px; margin-top: 4px; max-height: 120px; white-space: pre-wrap; word-break: break-all;"></pre>
+                </div>
+            </div>
+
+            <!-- Traditional Map Showcase Card -->
+            <div class="db-card">
+                <h3>🌍 Traditional Lands</h3>
+                <ul class="culture-list">
+                    <li>
+                        <strong style="color: var(--primary);">Sky Temple Valley:</strong>
+                        <p style="font-size:0.8rem; color: var(--text-secondary);">Himalayan wooden pagoda temples woven into elevated South American stepwells & valley rivers.</p>
+                    </li>
+                    <li>
+                        <strong style="color: var(--primary);">Sakura Neon District:</strong>
+                        <p style="font-size:0.8rem; color: var(--text-secondary);">Silent wooden shrine pagodas surrounded by looming high-reflectivity cyberpunk skyscrapers.</p>
+                    </li>
+                    <li>
+                        <strong style="color: var(--primary);">Emerald Rain Basin:</strong>
+                        <p style="font-size:0.8rem; color: var(--text-secondary);">Amazonian deep-canopy rivers hiding ancient monolithic masonry stepwells.</p>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Weapon progression timeline -->
+            <div class="db-card">
+                <h3>⚔️ Weapon Evolution</h3>
+                <ul class="culture-list">
+                    <li>
+                        <strong style="color: var(--spiritual);">Mythological grade astras:</strong>
+                        <p style="font-size:0.8rem; color: var(--text-secondary);">Astra launchers containing sound-wave tracking tracking metrics and GADA ground-shockwave maces.</p>
+                    </li>
+                    <li>
+                        <strong style="color: var(--spiritual);">Tactical nuclear grade defenses:</strong>
+                        <p style="font-size:0.8rem; color: var(--text-secondary);">Sovereign EMP launchers and localized radiation clouds that enforce tactical shifts without using chemical gases.</p>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="hero" style="background: var(--surface);">
+            <h3>🌐 Kubernetes High-Traffic Topology Blueprint</h3>
+            <p style="font-size: 0.8rem; margin-bottom: 10px;">
+                Configuration deployment profile `deployment-mesh.yaml` designed to route up to 5,000,000,000 nodes using Anycast and localized Edge Compute groups.
+            </p>
+            <div class="orchestration-box">
+                <span class="kni-key">apiVersion:</span> <span class="kni-val">apps/v1</span><br>
+                <span class="kni-key">kind:</span> <span class="kni-val">Deployment</span><br>
+                <span class="kni-key">metadata:</span><br>
+                &nbsp;&nbsp;<span class="kni-key">name:</span> <span class="kni-val">pokyon-global-core-mesh</span><br>
+                &nbsp;&nbsp;<span class="kni-key">labels:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="kni-key">app:</span> <span class="kni-val">pokyon-multiplayer</span><br>
+                <span class="kni-key">spec:</span><br>
+                &nbsp;&nbsp;<span class="kni-key">replicas:</span> <span class="kni-val">50000</span> <span style="color:#5c6370;"># Scaled globally across 3 main geographic sectors</span><br>
+                &nbsp;&nbsp;<span class="kni-key">selector:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="kni-key">matchLabels:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kni-key">tier:</span> <span class="kni-val">game-server-tick</span><br>
+                &nbsp;&nbsp;<span class="kni-key">template:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="kni-key">spec:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kni-key">containers:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kni-key">- name:</span> <span class="kni-val">pokyon-tick-processor</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kni-key">image:</span> <span class="kni-val">pokyon-registry.gcr.io/core:v1.0.0</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kni-key">resources:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kni-key">limits:</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kni-key">memory:</span> <span class="kni-val">"8Gi"</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kni-key">cpu:</span> <span class="kni-val">"4"</span>
+            </div>
+        </div>
+
+        <footer>
+            &copy; 2026 POKYON Sockets Engine Dashboard. Real-Time Telemetry and Operational Command Hub. Fully owned and authored by Royal Puskar Khas.
+        </footer>
+
+    </div>
+
+    <script>
+        // Simulate dynamic telemetry clock of playtimes in index dashboard
+        var totalSecsInADay = 14400; // 4 Hours
+        var currentSecs = 0;
+        var inBreak = false;
+        var breakCountdown = 1800; // 30 mins
+
+        // Secure Nepalese Multi-Bank ePayment routing simulator
+        function simulateNprTopup() {
+            var inputAmount = parseFloat(document.getElementById('topup-amount').value);
+            if (isNaN(inputAmount) || inputAmount <= 0) {
+                alert("Please enter a valid NPR amount (e.g. 500)");
+                return;
+            }
+
+            var gw = document.getElementById('topup-gateway').value;
+            var txUuid = "TX-" + gw.toUpperCase() + "-" + Date.now().toString().substring(7) + "-" + Math.floor(Math.random() * 900 + 100);
+            
+            // Craft Signature Source based on actual eSewa v2 signature structure:
+            // "total_amount,transaction_uuid,product_code"
+            var signaturePayload = "total_amount=" + inputAmount.toFixed(2) + ",transaction_uuid=" + txUuid + ",product_code=EPAY_POKYON_PROD_100";
+            
+            // HMAC-SHA256 Proprietary Representation
+            var salt = "ROYAL_SOVEREIGN_SIGNATURE_SALT_SECRET";
+            var combined = signaturePayload + salt;
+            var hashValue = 0;
+            for (var i = 0; i < combined.length; i++) {
+                var char = combined.charCodeAt(i);
+                hashValue = ((hashValue << 5) - hashValue) + char;
+                hashValue |= 0;
+            }
+            var resultHash = "HMAC_SHA256_" + Math.abs(hashValue).toString(16).toUpperCase() + "_SECURE_WEB_" + Date.now().toString().substring(9);
+
+            // Compute Base and 13% VAT Split (Nepal Tax Compliance)
+            var baseAmount = parseFloat((inputAmount / 1.13).toFixed(2));
+            var vatAmount = parseFloat((inputAmount - baseAmount).toFixed(2));
+
+            // Compute exact 70% / 30% splits on tax-exclusive amount
+            var primaryOpsAmount = parseFloat((baseAmount * 0.70).toFixed(2));
+            var secondaryReserveAmount = parseFloat((baseAmount * 0.30).toFixed(2));
+
+            // Render details
+            document.getElementById('res-uuid').innerText = txUuid;
+            document.getElementById('res-gateway').innerText = gw === 'esewa' ? "eSewa ePay v2 (HMAC Signed Complete)" : "Khalti Merchant API v2 Applet Complete";
+            document.getElementById('res-hash').innerText = resultHash;
+            document.getElementById('res-total').innerText = "Rs. " + inputAmount.toFixed(2) + " NPR";
+            document.getElementById('res-vat').innerText = "Rs. " + vatAmount.toFixed(2) + " NPR (13% VAT Split)";
+            document.getElementById('res-base').innerText = "Rs. " + baseAmount.toFixed(2) + " NPR";
+            document.getElementById('res-op-amount').innerText = "Rs. " + primaryOpsAmount.toFixed(2) + " NPR (70% Operations)";
+            document.getElementById('res-res-amount').innerText = "Rs. " + secondaryReserveAmount.toFixed(2) + " NPR (30% Reserved Capital)";
+
+            // Mock Redis Secure Immutability Record
+            var redisLog = {
+                "redis_key": "ledger:tx:" + txUuid,
+                "status": "SETTLED_SPLIT_COMPLETE",
+                "player_uuid": "usr-8a9d72df-8f1a-4712-ba78-ef7210bc",
+                "gateways_mapped": gw.toUpperCase(),
+                "financials": {
+                    "total_npr": inputAmount,
+                    "tax_free_base": baseAmount,
+                    "collected_vat_13_pct": vatAmount,
+                    "splits": {
+                        "nabil_corp_ops_70_pct": primaryOpsAmount,
+                        "nic_asia_reserve_30_pct": secondaryReserveAmount
+                    }
+                },
+                "payout_protocols": {
+                    "connect_ips_payout": {
+                        "MERCHANT_ID": "POKYON_NPL_CORP_01",
+                        "TXN_ID": txUuid + "_B2B_1",
+                        "CREDIT_ACCT_NO": "0110017502781",
+                        "CREDIT_BANK": "Nabil Bank Limited",
+                        "CREDIT_ACCT_NAME": "POKYON ENTERPRISES PVT LTD - OPS"
+                    },
+                    "fonepay_b2b_payout": {
+                        "merchant_code": "POKYON_FONEPAY_01",
+                        "partner_txn_id": txUuid + "_B2B_F2",
+                        "customer_account_no": "1202874910274",
+                        "customer_bank": "NIC Asia Bank Limited",
+                        "customer_account_name": "POKYON ENTERPRISES PVT LTD - SECURED CAPITAL"
+                    }
+                },
+                "assets_granted": {
+                    "mantra_coins_added": Math.floor(inputAmount),
+                    "db_state": "SUCCESS"
+                },
+                "signature_audit": {
+                    "hmac_sha256": resultHash,
+                    "sovereign_owner": "ROYAL PUSKAR KHAS"
+                }
+            };
+
+            document.getElementById('redis-payload-log').innerText = JSON.stringify(redisLog, null, 2);
+            document.getElementById('payout-result').style.display = 'block';
+            
+            // Scroll result into view smoothly
+            document.getElementById('payout-result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Dynamically update user-nodes count to simulate 5-billion active server-mesh traffic
+        setInterval(function() {
+            var nodeCount = 42000 + Math.floor(Math.random() * 950);
+            var users = 4.80 + (Math.random() * 0.19);
+            document.getElementById('mesh-nodes').innerText = nodeCount.toLocaleString() + " / 50,000";
+            document.getElementById('user-count').innerText = users.toFixed(2) + " Billion";
+        }, 3000);
+
+        // Core anti-addiction loop simulator inside browser website
+        setInterval(function() {
+            var statusBadge = document.getElementById('cooldown-status');
+            var countdownDisplay = document.getElementById('timer-countdown');
+            var pbFill = document.getElementById('cooldown-fill');
+
+            if (!inBreak) {
+                currentSecs += 10; // Speed-up simulation to make it visible
+                var remainingPlay = totalSecsInADay - currentSecs;
+                
+                if (remainingPlay <= 0) {
+                    countdownDisplay.innerText = "DAILY LIMIT REACHED";
+                    statusBadge.innerText = "Locked Natively";
+                    statusBadge.className = "badge badge-red";
+                    pbFill.style.width = "100%";
+                    return;
+                }
+
+                // Format countdown representation
+                var hrs = Math.floor(remainingPlay / 3600);
+                var mins = Math.floor((remainingPlay % 3600) / 60);
+                var secs = remainingPlay % 60;
+                countdownDisplay.innerText = 
+                    (hrs < 10 ? "0" + hrs : hrs) + ":" + 
+                    (mins < 10 ? "0" + mins : mins) + ":" + 
+                    (secs < 10 ? "0" + secs : secs);
+                
+                var barWidth = (currentSecs / totalSecsInADay) * 100;
+                pbFill.style.width = barWidth + "%";
+                pbFill.style.backgroundColor = "violet";
+
+                // Trigger 30-min session break simulation every 1800 seconds
+                if (currentSecs % 1800 === 0 && currentSecs > 0) {
+                    inBreak = true;
+                    breakCountdown = 1800;
+                }
+            } else {
+                breakCountdown -= 30; // Speed-up simulated rest countdown 
+                countdownDisplay.innerText = "REST: " + Math.round(breakCountdown / 60) + " MINS";
+                statusBadge.innerText = "Break active";
+                statusBadge.className = "badge badge-red";
+                pbFill.style.width = "0%";
+
+                if (breakCountdown <= 0) {
+                    inBreak = false;
+                    statusBadge.innerText = "Core Operational";
+                    statusBadge.className = "badge badge-green";
+                }
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

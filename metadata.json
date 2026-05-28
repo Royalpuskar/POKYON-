@@ -1,0 +1,6 @@
+{
+  "name": "Pokyon",
+  "description": "Cross-platform 3D action-survival game & global website dashboard hub with a client-authoritative anti-addiction loop. Produced by Royal Puskar Khas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

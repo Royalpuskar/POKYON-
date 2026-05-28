@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pokyon 3D Operational Arena</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #03050a; font-family: 'Courier New', monospace; color: #fff; }
+        #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+        
+        /* Tactical HUD overlays */
+        .hud-overlay { position: absolute; z-index: 10; pointer-events: none; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; }
+        .hud-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .hud-panel { background: rgba(10, 15, 29, 0.85); border: 1.5px solid #00ffcc; border-radius: 4px; padding: 10px 14px; box-shadow: 0 0 10px rgba(0, 255, 204, 0.2); pointer-events: auto; }
+        .branding { text-transform: uppercase; font-size: 14px; color: #00ffcc; font-weight: bold; letter-spacing: 2px; }
+        .developer { font-size: 10px; color: #8a99ad; margin-top: 2px; }
+        
+        .weapon-stats { text-align: right; }
+        .ammo-display { font-size: 20px; color: #ff3b30; font-weight: bold; }
+        .ammo-label { font-size: 9px; color: #8a99ad; text-transform: uppercase; }
+
+        .hud-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .crosshair { width: 18px; height: 18px; position: relative; border-radius: 50%; border: 1.5px solid rgba(0, 255, 204, 0.61); }
+        .crosshair::before { content: ''; position: absolute; top: 50%; left: -6px; right: -6px; height: 1.5px; background: #00ffcc; transform: translateY(-50%); }
+        .crosshair::after { content: ''; position: absolute; left: 50%; top: -6px; bottom: -6px; width: 1.5px; background: #00ffcc; transform: translateX(-50%); }
+
+        .hud-bottom { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; }
+        .health-bar-container { width: 180px; }
+        .health-label { font-size: 10px; color: #00ffcc; margin-bottom: 4px; display: flex; justify-content: space-between; text-transform: uppercase; }
+        .health-track { width: 100%; height: 14px; background: rgba(0,0,0,0.5); border: 1px solid #00ffcc; padding: 1px; }
+        .health-fill { width: 100%; height: 100%; background: #00ffcc; transition: width 0.1s linear; }
+
+        /* Full Screen Healing Aura / Vignette */
+        #healing-aura { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; box-shadow: inset 0 0 80px rgba(0, 255, 100, 0); z-index: 5; transition: box-shadow 0.5s ease-on-out; }
+        .healing-active { box-shadow: inset 0 0 100px rgba(0, 255, 130, 0.45) !important; }
+
+        /* On-Screen Mobile Joystick and Action Buttons */
+        .touch-container { position: absolute; bottom: 20px; left: 20px; z-index: 20; display: flex; align-items: center; justify-content: space-between; width: calc(100% - 40px); pointer-events: none; }
+        .joystick-zone { width: 110px; height: 110px; background: rgba(255,255,255,0.06); border: 2px dashed rgba(0, 255, 204, 0.25); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; pointer-events: auto; }
+        .joystick-thumb { width: 44px; height: 44px; background: radial-gradient(circle, #00ffcc 0%, #036855 100%); border-radius: 50%; box-shadow: 0 0 15px rgba(0,255,204,0.5); position: absolute; }
+        
+        .action-zone { display: flex; flex-direction: column; gap: 12px; align-items: flex-end; pointer-events: auto; }
+        .action-row { display: flex; gap: 12px; }
+        .btn-action { width: 50px; height: 50px; background: rgba(20, 27, 45, 0.85); border: 1.5px solid #00ffcc; border-radius: 50%; color: #00ffcc; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; text-transform: uppercase; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .btn-action:active { background: #00ffcc; color: #0a0f1d; box-shadow: 0 0 15px #00ffcc; transform: scale(0.95); }
+        .btn-fire { width: 66px; height: 66px; border: 2px solid #ff3b30; color: #ff3b30; font-size: 13px; box-shadow: 0 0 10px rgba(255,59,48,0.3); }
+        .btn-fire:active { background: #ff3b30; color: #fff; box-shadow: 0 0 25px #ff3b30; }
+
+        /* Status & Banner messages */
+        #banner-msg { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: rgba(255, 59, 48, 0.9); border: 2px solid #fff; padding: 12px 24px; font-weight: bold; text-transform: uppercase; font-size: 13px; border-radius: 4px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); display: none; z-index: 100; text-align: center; }
+        #sanctuary-banner { position: absolute; bottom: 150px; left: 50%; transform: translateX(-50%); background: rgba(0, 255, 204, 0.15); border: 1.5px solid #00ffcc; border-radius: 4px; padding: 6px 16px; font-size: 11px; color: #00ffcc; font-weight: bold; text-transform: uppercase; display: none; z-index: 50; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div id="healing-aura"></div>
+
+    <div id="banner-msg">ALERT: MANDATORY SYSTEM LOCK ACTIVATING</div>
+    <div id="sanctuary-banner">🛡️ HOLY SANCTUARY ACTIVE: MOVEMENT INHIBITED & HEALTH RECOVERY ACTIVE</div>
+
+    <div class="hud-overlay">
+        <div class="hud-header">
+            <div class="hud-panel">
+                <div class="branding">POKYON CORE</div>
+                <div class="developer">OWNER: ROYAL PUSKAR KHAS</div>
+            </div>
+            <div class="hud-panel weapon-stats">
+                <div class="ammo-display" id="ammo-count">30 / 30</div>
+                <div class="ammo-label" id="weapon-label">ASTRA LAUNCHER</div>
+            </div>
+        </div>
+
+        <div class="hud-center">
+            <div class="crosshair"></div>
+        </div>
+
+        <div class="hud-bottom">
+            <div class="hud-panel health-bar-container">
+                <div class="health-label">
+                    <span>AURA LIFE</span>
+                    <span id="health-value">100%</span>
+                </div>
+                <div class="health-track">
+                    <div class="health-fill" id="health-bar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Mobile HUD controllers -->
+    <div class="touch-container">
+        <div class="joystick-zone" id="joystick">
+            <div class="joystick-thumb" id="joystick-thumb"></div>
+        </div>
+        <div class="action-zone">
+            <div class="action-row">
+                <div class="btn-action" id="btn-crouch">C</div>
+                <div class="btn-action" id="btn-jump">JMP</div>
+                <div class="btn-action" id="btn-reload">R</div>
+            </div>
+            <div class="btn-action btn-fire" id="btn-fire">FIRE</div>
+        </div>
+    </div>
+
+    <!-- Import Three.js through cdnjs safely -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Game and simulation state parameters
+        var scene, camera, renderer;
+        var player, terrain, healingZone;
+        var keys = { w: false, a: false, s: false, d: false, Shift: false };
+        
+        // Locomotion & specs parameters (matching specifications)
+        var walkSpeed = 0.12;
+        var sprintSpeed = 0.22;
+        var crouchSpeed = 0.06;
+        var currentSpeed = walkSpeed;
+        
+        var health = 100.0;
+        var maxAmmo = 30;
+        var currentAmmo = 30;
+        var isCrouching = false;
+        var insideSanctuary = false;
+        var currentWeaponType = "Astra Launcher";
+
+        // Weapon fire variables
+        var nextFireTime = 0;
+        var fireRate = 120; // 0.12s
+        var lastShotTime = 0;
+        var bulletLines = [];
+
+        // Touch Joystick Variables
+        var joystick = document.getElementById('joystick');
+        var thumb = document.getElementById('joystick-thumb');
+        var joystickActive = false;
+        var joystickStart = { x: 0, y: 0 };
+        var moveVector = { x: 0, y: 0 };
+
+        // Connect back to Android App (if applicable)
+        function notifyAndroid(event, value) {
+            console.log("Pokyon Bridge: " + event + " = " + value);
+            if (window.AndroidBridge) {
+                try {
+                    window.AndroidBridge.postMessage(JSON.stringify({event: event, value: value}));
+                } catch(e) { console.error("AndroidBridge error", e); }
+            }
+        }
+
+        // Initialize WebGL Graphics Engine environment
+        function init() {
+            var container = document.getElementById('canvas-container');
+            
+            // Setup Scene & Fog (cinematic look)
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x060912);
+            scene.fog = new THREE.FogExp2(0x060912, 0.04);
+
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 4, 8); // Over-the-shoulder frame angle
+
+            // WebGL renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Lighting setups
+            var ambientLight = new THREE.AmbientLight(0x1d2230, 0.8);
+            scene.add(ambientLight);
+
+            var dirLight = new THREE.DirectionalLight(0x00ffcc, 1);
+            dirLight.position.set(10, 20, 10);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            // Build Battlefield Ground Terrain
+            var groundGeo = new THREE.PlaneGeometry(200, 200, 10, 10);
+            groundGeo.rotateX(-Math.PI / 2);
+            var groundMat = new THREE.MeshStandardMaterial({
+                color: 0x111622,
+                roughness: 0.9,
+                metalness: 0.2,
+                flatShading: true
+            });
+            terrain = new THREE.Mesh(groundGeo, groundMat);
+            terrain.receiveShadow = true;
+            scene.add(terrain);
+
+            // Build some World War Ruins & Obstacles
+            buildObstacles();
+
+            // Setup Custom 3D Character Model Mesh
+            // Body / Core
+            player = new THREE.Group();
+            
+            var bodyGeo = new THREE.BoxGeometry(1.2, 1.8, 0.8);
+            var bodyMat = new THREE.MeshStandardMaterial({ color: 0x223344, roughness: 0.6 });
+            var bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+            bodyMesh.position.y = 0.9;
+            bodyMesh.castShadow = true;
+            player.add(bodyMesh);
+
+            // Tactical glowing helmet
+            var headGeo = new THREE.SphereGeometry(0.5, 8, 8);
+            var headMat = new THREE.MeshStandardMaterial({ color: 0x00ffcc, emissive: 0x00ffcc, emissiveIntensity: 0.4 });
+            var headMesh = new THREE.Mesh(headGeo, headMat);
+            headMesh.position.set(0, 2, 0);
+            headMesh.castShadow = true;
+            player.add(headMesh);
+
+            // Forearm Gauntlet Launcher (Mahabharata Astra launcher)
+            var armGeo = new THREE.BoxGeometry(0.3, 0.3, 1.2);
+            var armMat = new THREE.MeshStandardMaterial({ color: 0x090d16, metalness: 0.8 });
+            var armMesh = new THREE.Mesh(armGeo, armMat);
+            armMesh.position.set(0.65, 0.9, 0.4);
+            armMesh.name = "launcher";
+            player.add(armMesh);
+
+            player.position.set(0, 0, 0);
+            scene.add(player);
+
+            // Setup Sacred Glowing "Healing Sanctuary" Monument 
+            var sancGeo = new THREE.CylinderGeometry(4, 4, 15, 32, 1, true);
+            var sancMat = new THREE.MeshBasicMaterial({
+                color: 0x00ff99,
+                transparent: true,
+                opacity: 0.15,
+                side: THREE.DoubleSide
+            });
+            healingZone = new THREE.Mesh(sancGeo, sancMat);
+            healingZone.position.set(0, 7.5, -25); // Placed slightly distance
+            scene.add(healingZone);
+
+            // Inner glowing pillar
+            var coreGeo = new THREE.CylinderGeometry(0.2, 0.2, 15, 8);
+            var coreMat = new THREE.MeshBasicMaterial({
+                color: 0x00ffcc,
+                transparent: true,
+                opacity: 0.6
+            });
+            var coreCol = new THREE.Mesh(coreGeo, coreMat);
+            coreCol.position.set(0, 7.5, -25);
+            scene.add(coreCol);
+
+            // Add floating rings around Sanctuary
+            var ringGeo = new THREE.RingGeometry(3.8, 4, 32);
+            ringGeo.rotateX(Math.PI/2);
+            var ringMat = new THREE.MeshBasicMaterial({ color: 0x00ff99, side: THREE.DoubleSide });
+            var ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.position.set(0, 0.1, -25);
+            scene.add(ring);
+
+            // Register event listeners
+            window.addEventListener('keydown', onKeyDown);
+            window.addEventListener('keyup', onKeyUp);
+            window.addEventListener('resize', onWindowResize);
+
+            // Laptop/Desktop Mouse triggers
+            document.addEventListener('mousedown', function(e) {
+                if (e.target.closest('.btn-action') || e.target.closest('.hud-panel')) {
+                    return;
+                }
+                if (e.button === 0) { // Left-click
+                    triggerWeaponShot();
+                }
+            });
+
+            setupTouchControls();
+
+            // Set weapon type label
+            document.getElementById('weapon-label').innerHTML = currentWeaponType + " <br><span style='font-size:8px;color:#ff3b30;'>SOVEREIGN DESIGN</span>";
+
+            animate();
+        }
+
+        // Build some realistic low-poly debris/outposts
+        function buildObstacles() {
+            var boxGeo = new THREE.BoxGeometry(4, 2, 4);
+            var boxMat = new THREE.MeshStandardMaterial({ color: 0x444d56, roughness: 0.8 });
+            
+            // Randomly scatter concrete bunkers and sandbags
+            var positions = [
+                [-15, 1, -15], [15, 1, -12], [-8, 1, 12], [10, 1, 15], [12, 1, -28], [-12, 1, -30]
+            ];
+            
+            positions.forEach(function(pos) {
+                var obstacle = new THREE.Mesh(boxGeo, boxMat);
+                obstacle.position.set(pos[0], pos[1], pos[2]);
+                obstacle.castShadow = true;
+                obstacle.receiveShadow = true;
+                scene.add(obstacle);
+            });
+        }
+
+        function onKeyDown(e) {
+            if (e.key === 'w' || e.key === 'W') keys.w = true;
+            if (e.key === 'a' || e.key === 'A') keys.a = true;
+            if (e.key === 's' || e.key === 'S') keys.s = true;
+            if (e.key === 'd' || e.key === 'D') keys.d = true;
+            if (e.key === 'Shift') keys.Shift = true;
+            if (e.key === 'c' || e.key === 'C') toggleCrouch();
+            if (e.key === 'r' || e.key === 'R') reloadWeapon();
+            if (e.key === ' ') handleJump();
+            if (e.key === 'f' || e.key === 'F' || e.key === 'Enter') triggerWeaponShot();
+        }
+
+        function onKeyUp(e) {
+            if (e.key === 'w' || e.key === 'W') keys.w = false;
+            if (e.key === 'a' || e.key === 'A') keys.a = false;
+            if (e.key === 's' || e.key === 'S') keys.s = false;
+            if (e.key === 'd' || e.key === 'D') keys.d = false;
+            if (e.key === 'Shift') keys.Shift = false;
+        }
+
+        function toggleCrouch() {
+            isCrouching = !isCrouching;
+            var scaleY = isCrouching ? 0.5 : 1.0;
+            player.children[0].scale.y = scaleY;
+            player.children[0].position.y = 0.9 * scaleY;
+            notifyAndroid("stance", isCrouching ? "crouch" : "stand");
+        }
+
+        function handleJump() {
+            // Simulated simplified jump mechanics
+            if (player.position.y <= 0.05) {
+                player.position.y = 2.5; // Jump up instantly and drop down in tick
+                notifyAndroid("movement", "jump");
+            }
+        }
+
+        function reloadWeapon() {
+            currentAmmo = maxAmmo;
+            document.getElementById('ammo-count').innerText = currentAmmo + " / " + maxAmmo;
+            document.getElementById('ammo-count').style.color = "#00ffcc";
+            notifyAndroid("combat", "reload");
+        }
+
+        function triggerWeaponShot() {
+            var timeNow = Date.now();
+            if (timeNow < lastShotTime + fireRate) return;
+            lastShotTime = timeNow;
+
+            if (currentAmmo <= 0) {
+                document.getElementById('ammo-count').innerText = "RELOAD (R)";
+                document.getElementById('ammo-count').style.color = "#ff3b30";
+                return;
+            }
+
+            currentAmmo--;
+            document.getElementById('ammo-count').innerText = currentAmmo + " / " + maxAmmo;
+            
+            // Random Procedural kickback weapon push of the camera slightly
+            camera.position.y += 0.15;
+            camera.position.x += (Math.random() - 0.5) * 0.08;
+            setTimeout(function() {
+                camera.position.set(0, 4, 8); // Snap back to over shoulder camera view class
+            }, 80);
+
+            // Draw shooting laser ray tracking line
+            drawBulletRay();
+
+            notifyAndroid("combat", "shoot_success_ammo_" + currentAmmo);
+        }
+
+        function drawBulletRay() {
+            var material = new THREE.LineBasicMaterial({ color: 0x00ffcc });
+            var armWorldPosition = new THREE.Vector3();
+            player.getObjectByName("launcher").getWorldPosition(armWorldPosition);
+
+            var weaponTarget = new THREE.Vector3(0, 0, -1).applyQuaternion(player.quaternion).multiplyScalar(20).add(armWorldPosition);
+            
+            var points = [armWorldPosition, weaponTarget];
+            var geometry = new THREE.BufferGeometry().setFromPoints(points);
+            var line = new THREE.Line(geometry, material);
+            scene.add(line);
+            
+            bulletLines.push({ line: line, age: 0 });
+        }
+
+        // Setup touch listeners to adapt seamlessly to mobile interfaces
+        function setupTouchControls() {
+            joystick.addEventListener('touchstart', function(e) {
+                joystickActive = true;
+                var t = e.touches[0];
+                joystickStart = { x: t.clientX, y: t.clientY };
+            }, { passive: true });
+
+            window.addEventListener('touchmove', function(e) {
+                if (!joystickActive) return;
+                var t = e.touches[0];
+                var dx = t.clientX - joystickStart.x;
+                var dy = t.clientY - joystickStart.y;
+                var dist = Math.sqrt(dx*dx + dy*dy);
+                var maxDist = 45;
+                
+                if (dist > maxDist) {
+                    dx = (dx / dist) * maxDist;
+                    dy = (dy / dist) * maxDist;
+                }
+
+                thumb.style.transform = `translate(${dx}px, ${dy}px)`;
+                
+                // Set movement scale
+                moveVector.x = dx / maxDist;
+                moveVector.y = dy / maxDist;
+            }, { passive: true });
+
+            window.addEventListener('touchend', function(e) {
+                if (!joystickActive) return;
+                joystickActive = false;
+                thumb.style.transform = 'translate(0px, 0px)';
+                moveVector = { x: 0, y: 0 };
+            }, { passive: true });
+
+            document.getElementById('btn-crouch').addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                toggleCrouch();
+            });
+            document.getElementById('btn-jump').addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                handleJump();
+            });
+            document.getElementById('btn-reload').addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                reloadWeapon();
+            });
+
+            // Handle continuous fire on press hold
+            var fireInterval = null;
+            var fireBtn = document.getElementById('btn-fire');
+            
+            fireBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                triggerWeaponShot();
+                fireInterval = setInterval(triggerWeaponShot, fireRate);
+            });
+            
+            fireBtn.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                if (fireInterval) {
+                    clearInterval(fireInterval);
+                    fireInterval = null;
+                }
+            });
+        }
+
+        // Window resize
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Game ticking cycle loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Gravity simulation
+            if (player.position.y > 0) {
+                player.position.y -= 0.12; // Force drop
+                if (player.position.y < 0) player.position.y = 0;
+            }
+
+            // Stance adjust speed
+            var speed = isCrouching ? crouchSpeed : (keys.Shift ? sprintSpeed : walkSpeed);
+            
+            // Apply Keyboard Movements
+            var appliedMove = new THREE.Vector3();
+            if (keys.w) appliedMove.z -= 1;
+            if (keys.s) appliedMove.z += 1;
+            if (keys.a) appliedMove.x -= 1;
+            if (keys.d) appliedMove.x += 1;
+            appliedMove.normalize();
+
+            // Override with joystick touch movements if active
+            if (Math.abs(moveVector.x) > 0.05 || Math.abs(moveVector.y) > 0.05) {
+                appliedMove.set(moveVector.x, 0, moveVector.y);
+            }
+
+            if (appliedMove.lengthSq() > 0.01) {
+                // Rotate character towards movement vector
+                var angle = Math.atan2(appliedMove.x, appliedMove.z);
+                player.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+                
+                // Advance player position coordinates
+                player.translateOnAxis(new THREE.Vector3(0,0,1), speed);
+                
+                // Keep player within bounds
+                player.position.x = Math.max(-100, Math.min(100, player.position.x));
+                player.position.z = Math.max(-100, Math.min(100, player.position.z));
+            }
+
+            // Sync structural camera track over shoulder
+            var camOffset = new THREE.Vector3(0, 4, 6).applyQuaternion(player.quaternion);
+            camera.position.copy(player.position).add(camOffset);
+            camera.lookAt(player.position.clone().add(new THREE.Vector3(0, 1, -2).applyQuaternion(player.quaternion)));
+
+            // Collision check: Is inside Healing Sanctuary?
+            var distToSanc = player.position.distanceTo(new THREE.Vector3(0, 0, -25));
+            if (distToSanc < 6.0) { // Entrance overlap
+                if (!insideSanctuary) {
+                    insideSanctuary = true;
+                    document.getElementById('healing-aura').classList.add('healing-active');
+                    document.getElementById('sanctuary-banner').style.display = 'block';
+                    notifyAndroid("sanctuary", "inside");
+                }
+                
+                // Regenerate life tick dynamically
+                if (health < 100.0) {
+                    health += 0.25; // 4% per second tick approx in 60fps
+                    if (health > 100) health = 100;
+                    updateUIHealth();
+                }
+            } else {
+                if (insideSanctuary) {
+                    insideSanctuary = false;
+                    document.getElementById('healing-aura').classList.remove('healing-active');
+                    document.getElementById('sanctuary-banner').style.display = 'none';
+                    notifyAndroid("sanctuary", "outside");
+                }
+            }
+
+            // Update visible age of laser bullets and prune them
+            for (var i = bulletLines.length - 1; i >= 0; i--) {
+                bulletLines[i].age++;
+                if (bulletLines[i].age > 10) {
+                    scene.remove(bulletLines[i].line);
+                    bulletLines.splice(i, 1);
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function updateUIHealth() {
+            var widthPct = Math.round(health) + "%";
+            document.getElementById('health-bar').style.width = widthPct;
+            document.getElementById('health-value').innerText = widthPct;
+        }
+
+        // Force triggers and state synchronization externally from JVM (anti-addiction block locks)
+        function triggerExternalLockout(isLocked, alertMsg) {
+            var banner = document.getElementById('banner-msg');
+            if (isLocked) {
+                banner.innerText = alertMsg;
+                banner.style.display = 'block';
+                // Disable on-screen controllers
+                document.querySelector('.touch-container').style.display = 'none';
+            } else {
+                banner.style.display = 'none';
+                document.querySelector('.touch-container').style.display = 'flex';
+            }
+        }
+
+        // Initialize standard graphics layers
+        window.onload = init;
+    </script>
+</body>
+</html>
