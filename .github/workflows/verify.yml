@@ -1,0 +1,33 @@
+name: Verify repository hygiene
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-hygiene:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: |
+          node --check PokyonMultiBankRouting.js
+          node --check PokyonNepalBillingEngine.js
+          node --check pokyon-build-package/backend/security/pokyon-nepal-bank.js
+      - name: Guard against accidentally committed signing files
+        run: |
+          test ! -f debug.keystore.base64
+          test ! -f debug.keystore
+          test ! -e .build-outputs/app-debug.apk
+          if git ls-files | grep -E '(^|/)(debug\.keystore(\.base64)?|.*\.(jks|keystore|apk|aab))$'; then
+            echo "Signing key or APK tracked in Git"; exit 1
+          fi
+          test -f app/build.gradle.kts
+          grep -q 'signingConfigs.getByName("debug")' app/build.gradle.kts
+          echo "Source hygiene checks passed. Android compilation not executed."
