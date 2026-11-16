@@ -1,5 +1,11 @@
 # POKYON — Android game prototype
 
+<!-- portfolio-website:start -->
+## Website
+
+This repository is an Android prototype; no standalone website deployment is verified. See the separate [POKYON browser game repository](https://github.com/Royalpuskar/POKYON) for its web implementation.
+<!-- portfolio-website:end -->
+
 POKYON is a Kotlin/Jetpack Compose Android project with local game screens, a web-based playable prototype, data persistence experiments and billing/routing **prototype code**. It is **not** a production banking integration or a published commercial game.
 
 ## Run in Android Studio
@@ -26,3 +32,10 @@ A debug signing key and its signed debug APK were previously committed. Neither 
 ## Testing and publication
 
 Static repository checks are in `.github/workflows/verify.yml`. They are not Android compilation tests. Before publishing, add a Gradle wrapper, run unit/instrumented tests, validate WebView handling, test payment flows using sandbox credentials and integrate server-side receipt/payment verification. No production readiness claim is made.
+
+
+<!-- portfolio-rights:start -->
+## Copyright
+
+© 2026 Puskar (Royalpuskar). All rights reserved for original project content, except where an applicable license grants permission. Third-party rights and notices remain with their owners.
+<!-- portfolio-rights:end -->
